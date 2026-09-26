@@ -16,15 +16,13 @@ declare(strict_types=1);
  |
  */
 
-define('FRONTEND_URL', getenv('FRONTEND_URL') ?: 'https://tourandtraveltouch.great-site.net');
-define('BACKEND_URL', getenv('BACKEND_URL') ?: 'https://tourandtraveltouch.great-site.net');
+define('FRONTEND_URL', getenv('FRONTEND_URL') ?: 'https://mahfuj735.github.io/TourAndTravelTouch');
+define('BACKEND_URL', getenv('BACKEND_URL') ?: '');
 
 function setCorsHeaders(): void
 {
     $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
     $allowedOrigins = [
-        'https://tourandtraveltouch.great-site.net',
-        'http://tourandtraveltouch.great-site.net',
         'https://mahfuj735.github.io',
         'https://mahfujul-01726.github.io',
         'http://localhost:8000',
@@ -33,7 +31,16 @@ function setCorsHeaders(): void
         'http://127.0.0.1',
     ];
 
-    if ($origin !== '' && in_array($origin, $allowedOrigins, true)) {
+    $originOk = $origin !== '' && in_array($origin, $allowedOrigins, true);
+    if (!$originOk && $origin !== '') {
+        // Allow any Render free-stack host (service URL chosen at deploy time).
+        $host = (string)parse_url($origin, PHP_URL_HOST);
+        if ($host !== '' && substr($host, -13) === '.onrender.com') {
+            $originOk = true;
+        }
+    }
+
+    if ($originOk) {
         header('Access-Control-Allow-Origin: ' . $origin);
         header('Vary: Origin');
     }
@@ -58,9 +65,9 @@ function isSecureRequest(): bool
     if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
         return true;
     }
-    // InfinityFree terminates TLS in front of Apache; host-based fallback.
+    // Render terminates TLS in front of Apache; host-based fallback.
     $host = $_SERVER['HTTP_HOST'] ?? '';
-    if ($host !== '' && strpos($host, 'great-site.net') !== false) {
+    if ($host !== '' && substr($host, -13) === '.onrender.com') {
         return true;
     }
     return false;

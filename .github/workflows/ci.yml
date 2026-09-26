@@ -1,0 +1,43 @@
+name: CI Validate
+
+# Render auto-deploys from GitHub on every push to main (see render.yaml).
+# This workflow only validates: PHP syntax + no stale space-containing asset paths.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    name: Validate PHP + links
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get latest codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo, pdo_mysql, pdo_pgsql
+
+      - name: PHP syntax check
+        run: |
+          shopt -s globstar
+          fail=0
+          for f in **/*.php; do
+            php -l "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Check for stale asset paths with spaces
+        run: |
+          if grep -R --include='*.html' --include='*.css' --include='*.js' --include='*.php' -n "background img.png\|Saint Martin.jpeg\|Shait-Gumbad Mosque.jpeg" .; then
+            echo "Found references to old filenames with spaces. Rename to hyphenated names."
+            exit 1
+          fi
+
+      - name: Dockerfile sanity (hadolint optional, skipped offline)
+        run: test -f Dockerfile && test -f render.yaml && echo "deploy files present"

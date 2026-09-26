@@ -13,12 +13,17 @@
  |  No trailing slash!
  */
 (function () {
-  var PROD_BACKEND = 'https://tourandtraveltouch.great-site.net';
+  // Free-stack backend (Render). Update if your Render service URL differs:
+  // Render dashboard → service → URL at top.
+  var PROD_BACKEND = 'https://tourandtraveltouch-backend.onrender.com';
   var host = (typeof window !== 'undefined' && window.location) ? window.location.hostname : '';
-  var sameOriginHosts = ['tourandtraveltouch.great-site.net', 'localhost', '127.0.0.1'];
-
+  // Same-origin (relative URLs) when served from Render itself or localhost —
+  // cookies/sessions work reliably. Absolute URL only for GitHub Pages preview.
   var backend = '';
-  if (sameOriginHosts.indexOf(host) === -1) {
+  var isRenderHost = host !== '' && host.slice(-13) === '.onrender.com';
+  if (host === 'localhost' || host === '127.0.0.1' || isRenderHost) {
+    backend = '';
+  } else {
     backend = PROD_BACKEND;
   }
 

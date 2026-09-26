@@ -5,33 +5,44 @@ require_once __DIR__ . '/../helpers.php';
 
 $error = '';
 
-$check = mysqli_query($connection, 'SELECT COUNT(*) AS cnt FROM admins');
-$row = mysqli_fetch_assoc($check);
-if ((int)$row['cnt'] === 0) {
-    $hash = password_hash('admin123', PASSWORD_BCRYPT, ['cost' => 12]);
-    mysqli_query($connection, "INSERT INTO admins (username, password_hash) VALUES ('admin', '$hash')");
+try {
+    $row = $connection->query('SELECT COUNT(*) AS cnt FROM admins')->fetch();
+    if ((int)($row['cnt'] ?? 0) === 0) {
+        $seedUser = getenv('ADMIN_USER') ?: 'admin';
+        $seedPass = getenv('ADMIN_PASS') ?: 'admin123';
+        $hash = password_hash($seedPass, PASSWORD_BCRYPT, ['cost' => 12]);
+        $seed = $connection->prepare("INSERT INTO admins (username, password_hash) VALUES (?, ?)");
+        $seed->execute([$seedUser, $hash]);
+    }
+} catch (Throwable $e) {
+    error_log('admin seed failed: ' . $e->getMessage());
+    $error = 'Database unavailable. Check DATABASE_URL on the server.';
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
     if ($username === '' || $password === '') {
         $error = 'Please enter both fields.';
     } else {
-        $stmt = mysqli_prepare($connection, 'SELECT id, password_hash FROM admins WHERE username = ?');
-        mysqli_stmt_bind_param($stmt, 's', $username);
-        mysqli_stmt_execute($stmt);
-        $admin = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+        try {
+            $stmt = $connection->prepare('SELECT id, password_hash FROM admins WHERE username = ? LIMIT 1');
+            $stmt->execute([$username]);
+            $admin = $stmt->fetch();
 
-        if ($admin && password_verify($password, $admin['password_hash'])) {
-            $_SESSION['admin_id'] = $admin['id'];
-            $_SESSION['admin_username'] = $username;
-            header('Location: dashboard.php');
-            exit;
+            if ($admin && password_verify($password, $admin['password_hash'])) {
+                $_SESSION['admin_id'] = $admin['id'];
+                $_SESSION['admin_username'] = $username;
+                header('Location: dashboard.php');
+                exit;
+            }
+
+            $error = 'Invalid username or password.';
+        } catch (Throwable $e) {
+            error_log('admin login failed: ' . $e->getMessage());
+            $error = 'Database unavailable. Please try again later.';
         }
-
-        $error = 'Invalid username or password.';
     }
 }
 ?>

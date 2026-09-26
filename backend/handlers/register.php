@@ -37,15 +37,13 @@ if (userExists($connection, $email)) {
 
 $passwordHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 
-$stmt = mysqli_prepare($connection, 'INSERT INTO users (fullname, email, password_hash) VALUES (?, ?, ?)');
-if (!$stmt) {
-    redirectWithFlash('/pages/signup.html', 'error', 'A system error occurred. Please try again.');
-}
-
-mysqli_stmt_bind_param($stmt, 'sss', $fullname, $email, $passwordHash);
-
-if (mysqli_stmt_execute($stmt)) {
-    redirectWithFlash('/index.html', 'success', 'Registration successful!');
+try {
+    $stmt = $connection->prepare('INSERT INTO users (fullname, email, password_hash) VALUES (?, ?, ?)');
+    if ($stmt->execute([$fullname, $email, $passwordHash])) {
+        redirectWithFlash('/index.html', 'success', 'Registration successful!');
+    }
+} catch (Throwable $e) {
+    error_log('register failed: ' . $e->getMessage());
 }
 
 redirectWithFlash('/pages/signup.html', 'error', 'Registration failed. Please try again.');

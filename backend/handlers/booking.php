@@ -47,15 +47,13 @@ $user = getLoggedInUser();
 
 ensureBookingUserColumn($connection);
 
-$stmt = mysqli_prepare($connection, 'INSERT INTO information (whereto, howmany, arrival, leaving, textdata, user_id, user_name, user_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-if (!$stmt) {
-    redirectWithFlash('/index.html', 'error', 'A system error occurred. Please try again.');
-}
-
-mysqli_stmt_bind_param($stmt, 'sssssiss', $whereto, $howmany, $arrival, $leaving, $notes, $user['id'], $user['name'], $user['email']);
-
-if (mysqli_stmt_execute($stmt)) {
-    redirectWithFlash('/index.html', 'success', 'Booking submitted successfully! We will contact you soon.');
+try {
+    $stmt = $connection->prepare('INSERT INTO information (whereto, howmany, arrival, leaving, textdata, user_id, user_name, user_email) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    if ($stmt->execute([$whereto, $howmany, $arrival, $leaving, $notes, $user['id'], $user['name'], $user['email']])) {
+        redirectWithFlash('/index.html', 'success', 'Booking submitted successfully! We will contact you soon.');
+    }
+} catch (Throwable $e) {
+    error_log('booking failed: ' . $e->getMessage());
 }
 
 redirectWithFlash('/index.html', 'error', 'Booking failed. Please try again.');

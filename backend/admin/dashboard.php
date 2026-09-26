@@ -8,19 +8,17 @@ if (empty($_SESSION['admin_id'])) {
 }
 
 $bookings = [];
-$bq = mysqli_query($connection, 'SELECT * FROM information ORDER BY created_at DESC');
-if ($bq) {
-    while ($r = mysqli_fetch_assoc($bq)) {
-        $bookings[] = $r;
-    }
+try {
+    $bookings = $connection->query('SELECT * FROM information ORDER BY created_at DESC')->fetchAll();
+} catch (Throwable $e) {
+    error_log('dashboard bookings failed: ' . $e->getMessage());
 }
 
 $users = [];
-$uq = mysqli_query($connection, 'SELECT id, fullname, email, created_at FROM users ORDER BY created_at DESC');
-if ($uq) {
-    while ($r = mysqli_fetch_assoc($uq)) {
-        $users[] = $r;
-    }
+try {
+    $users = $connection->query('SELECT id, fullname, email, created_at FROM users ORDER BY created_at DESC')->fetchAll();
+} catch (Throwable $e) {
+    error_log('dashboard users failed: ' . $e->getMessage());
 }
 
 $tb = count($bookings);

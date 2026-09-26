@@ -8,7 +8,12 @@ header('Content-Type: application/json');
 
 $ok = true;
 $db = 'up';
-if (!isset($connection) || !$connection || !mysqli_ping($connection)) {
+try {
+    if (!isset($connection) || !$connection || $connection->query('SELECT 1') === false) {
+        $ok = false;
+        $db = 'down';
+    }
+} catch (Throwable $e) {
     $ok = false;
     $db = 'down';
 }
@@ -17,5 +22,6 @@ http_response_code($ok ? 200 : 500);
 echo json_encode([
     'ok' => $ok,
     'db' => $db,
+    'driver' => defined('DB_DRIVER') ? DB_DRIVER : 'unknown',
     'time' => gmdate('c'),
 ]);

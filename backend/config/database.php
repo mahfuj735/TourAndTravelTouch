@@ -8,47 +8,99 @@ configureSession();
 
 /*
  |--------------------------------------------------------------------------
- | INFINITYFREE SETUP INSTRUCTIONS
+ | DATABASE SETUP — FREE STACK (Neon Postgres) + MySQL fallback
  |--------------------------------------------------------------------------
  |
- | 1. Go to InfinityFree control panel → MySQL Databases
- | 2. Create a new database
- | 3. Copy the credentials (hostname, database name, username, password)
- | 4. Open phpMyAdmin, select your database, import database/schema.sql
- | 5. Set the values below via ONE of these methods (first match wins):
- |      a) Environment variables DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASS
- |         (e.g. via .htaccess `SetEnv DB_HOST ...` on InfinityFree), or
- |      b) Edit the fallback values directly in this file on the server only.
+ | Priority:
+ |   1) DATABASE_URL env (Neon Postgres, e.g. postgresql://user:pass@host/db?sslmode=require)
+ |      → Render/Neon free tier. Sleeps when idle, NEVER deletes your data.
+ |   2) DB_HOST / DB_PORT / DB_NAME / DB_USER / DB_PASS env (MySQL, e.g. InfinityFree)
+ |   3) Placeholder fallbacks below (edit on the server only, never commit secrets)
  |
- | ⚠️  Do NOT commit real passwords to GitHub. This file ships with
- |     placeholder fallbacks; deployment uses your private values.
- |
- | Example InfinityFree values (replace with your own on the server):
- |   DB_HOST = 'sqlXXX.infinityfree.com'
- |   DB_NAME = 'if0_XXXXX_firstsql'
- |   DB_USER = 'if0_XXXXX'
- |   DB_PASS = 'your_password_here'
+ | Neon setup: create free project → copy connection string → set as
+ | DATABASE_URL env on Render (and locally in .env, which is git-ignored).
+ | Then import database/schema-pg.sql once via Neon SQL editor.
  |
  */
 
-define('DB_HOST', getenv('DB_HOST') ?: 'sqlXXX.infinityfree.com');
-define('DB_PORT', getenv('DB_PORT') ?: '3306');
-define('DB_NAME', getenv('DB_NAME') ?: 'if0_XXXXX_firstsql');
-define('DB_USER', getenv('DB_USER') ?: 'if0_XXXXX');
-define('DB_PASS', getenv('DB_PASS') ?: 'change-me');
+function parseDatabaseUrl(string $url): ?array
+{
+    $p = parse_url($url);
+    if ($p === false || empty($p['host'])) {
+        return null;
+    }
+    $scheme = strtolower($p['scheme'] ?? '');
+    $driver = (strpos($scheme, 'postgres') !== false) ? 'pgsql' : 'mysql';
+    return [
+        'driver' => $driver,
+        'host' => $p['host'],
+        'port' => $p['port'] ?? ($driver === 'pgsql' ? 5432 : 3306),
+        'name' => ltrim($p['path'] ?? '', '/'),
+        'user' => isset($p['user']) ? urldecode($p['user']) : '',
+        'pass' => isset($p['pass']) ? urldecode($p['pass']) : '',
+        'query' => $p['query'] ?? '',
+    ];
+}
 
-mysqli_report(MYSQLI_REPORT_OFF);
-$connection = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME, (int)DB_PORT);
-
-if (mysqli_connect_errno()) {
-    error_log('Database connection failed: ' . mysqli_connect_error());
+function dbUnavailable(string $detail = ''): void
+{
+    if ($detail !== '') {
+        error_log('Database connection failed: ' . $detail);
+    }
     http_response_code(500);
     $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
     if (strpos($accept, 'application/json') !== false || ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') {
         header('Content-Type: application/json');
-        exit(json_encode(['error' => 'Database unavailable. Check DB_HOST/DB_NAME/DB_USER/DB_PASS on the server.']));
+        exit(json_encode(['error' => 'Database unavailable. Check DATABASE_URL (Neon) or DB_HOST/DB_NAME/DB_USER/DB_PASS on the server.']));
     }
     exit('A system error occurred (database unavailable). Please try again later.');
 }
 
-mysqli_set_charset($connection, 'utf8mb4');
+$databaseUrl = getenv('DATABASE_URL') ?: '';
+$cfg = ($databaseUrl !== '') ? parseDatabaseUrl($databaseUrl) : null;
+
+if ($cfg === null) {
+    // MySQL path (InfinityFree or local)
+    $cfg = [
+        'driver' => 'mysql',
+        'host' => getenv('DB_HOST') ?: 'sqlXXX.infinityfree.com',
+        'port' => getenv('DB_PORT') ?: '3306',
+        'name' => getenv('DB_NAME') ?: 'if0_XXXXX_firstsql',
+        'user' => getenv('DB_USER') ?: 'if0_XXXXX',
+        'pass' => getenv('DB_PASS') ?: 'change-me',
+        'query' => '',
+    ];
+}
+
+define('DB_DRIVER', $cfg['driver']);
+
+try {
+    if ($cfg['driver'] === 'pgsql') {
+        $dsn = sprintf('pgsql:host=%s;port=%s;dbname=%s', $cfg['host'], $cfg['port'], $cfg['name']);
+        if ($cfg['query'] !== '' && strpos($cfg['query'], 'sslmode') === false) {
+            $dsn .= ';sslmode=require';
+        } elseif ($cfg['query'] !== '') {
+            parse_str($cfg['query'], $q);
+            if (!empty($q['sslmode'])) {
+                $dsn .= ';sslmode=' . $q['sslmode'];
+            }
+        }
+        $pdo = new PDO($dsn, $cfg['user'], $cfg['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    } else {
+        $dsn = sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $cfg['host'], $cfg['port'], $cfg['name']);
+        $pdo = new PDO($dsn, $cfg['user'], $cfg['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ]);
+    }
+} catch (Throwable $e) {
+    dbUnavailable($e->getMessage());
+}
+
+// Legacy name kept so existing includes keep working; it is now a PDO instance.
+$connection = $pdo;

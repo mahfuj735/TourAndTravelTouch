@@ -14,21 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['search'])) {
 $searchTerm = trim($_POST['search']);
 $results = [];
 
-$stmt = mysqli_prepare(
-    $connection,
-    'SELECT * FROM information WHERE whereto LIKE ? OR howmany LIKE ? OR textdata LIKE ? OR user_name LIKE ? OR user_email LIKE ? ORDER BY created_at DESC LIMIT 100'
-);
-if ($stmt) {
+try {
+    // ILIKE (case-insensitive) on Postgres, LIKE on MySQL.
+    $op = (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') ? 'ILIKE' : 'LIKE';
+    $stmt = $connection->prepare(
+        "SELECT * FROM information WHERE whereto $op ? OR howmany $op ? OR textdata $op ? OR user_name $op ? OR user_email $op ? ORDER BY created_at DESC LIMIT 100"
+    );
     $likeParam = '%' . $searchTerm . '%';
-    mysqli_stmt_bind_param($stmt, 'sssss', $likeParam, $likeParam, $likeParam, $likeParam, $likeParam);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        $results[] = $row;
-    }
-
-    mysqli_stmt_close($stmt);
+    $stmt->execute([$likeParam, $likeParam, $likeParam, $likeParam, $likeParam]);
+    $results = $stmt->fetchAll();
+} catch (Throwable $e) {
+    error_log('search failed: ' . $e->getMessage());
+    $results = [];
 }
 ?>
 <!DOCTYPE html>

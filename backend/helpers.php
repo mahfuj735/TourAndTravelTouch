@@ -59,52 +59,41 @@ function redirect(string $url): void
     exit;
 }
 
-function bookingExists(mysqli $connection, string $name): bool
+function bookingExists(PDO $connection, string $name): bool
 {
-    $stmt = mysqli_prepare($connection, 'SELECT textdata FROM information WHERE textdata = ?');
-    if (!$stmt) {
+    try {
+        $stmt = $connection->prepare('SELECT textdata FROM information WHERE textdata = ? LIMIT 1');
+        $stmt->execute([$name]);
+        return (bool)$stmt->fetchColumn();
+    } catch (Throwable $e) {
+        error_log('bookingExists failed: ' . $e->getMessage());
         return false;
     }
-
-    mysqli_stmt_bind_param($stmt, 's', $name);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_store_result($stmt);
-    $exists = mysqli_stmt_num_rows($stmt) > 0;
-    mysqli_stmt_close($stmt);
-
-    return $exists;
 }
 
-function userExists(mysqli $connection, string $email): bool
+function userExists(PDO $connection, string $email): bool
 {
-    $stmt = mysqli_prepare($connection, 'SELECT email FROM users WHERE email = ?');
-    if (!$stmt) {
+    try {
+        $stmt = $connection->prepare('SELECT email FROM users WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        return (bool)$stmt->fetchColumn();
+    } catch (Throwable $e) {
+        error_log('userExists failed: ' . $e->getMessage());
         return false;
     }
-
-    mysqli_stmt_bind_param($stmt, 's', $email);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_store_result($stmt);
-    $exists = mysqli_stmt_num_rows($stmt) > 0;
-    mysqli_stmt_close($stmt);
-
-    return $exists;
 }
 
-function getUserByEmail(mysqli $connection, string $email): ?array
+function getUserByEmail(PDO $connection, string $email): ?array
 {
-    $stmt = mysqli_prepare($connection, 'SELECT id, fullname, email, password_hash FROM users WHERE email = ?');
-    if (!$stmt) {
+    try {
+        $stmt = $connection->prepare('SELECT id, fullname, email, password_hash FROM users WHERE email = ? LIMIT 1');
+        $stmt->execute([$email]);
+        $user = $stmt->fetch();
+        return $user ?: null;
+    } catch (Throwable $e) {
+        error_log('getUserByEmail failed: ' . $e->getMessage());
         return null;
     }
-
-    mysqli_stmt_bind_param($stmt, 's', $email);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
-
-    return $user ?: null;
 }
 
 function isUserLoggedIn(): bool
@@ -132,15 +121,24 @@ function requireLogin(): void
     }
 }
 
-function ensureBookingUserColumn(mysqli $connection): void
+function ensureBookingUserColumn(PDO $connection): void
 {
-    $result = mysqli_query($connection, "SHOW COLUMNS FROM information LIKE 'user_id'");
-    if (mysqli_num_rows($result) === 0) {
-        mysqli_query($connection, "ALTER TABLE information
-            ADD COLUMN user_id INT DEFAULT NULL AFTER textdata,
-            ADD COLUMN user_name VARCHAR(255) DEFAULT NULL AFTER user_id,
-            ADD COLUMN user_email VARCHAR(255) DEFAULT NULL AFTER user_name,
-            ADD INDEX idx_user_id (user_id),
-            ADD INDEX idx_user_email (user_email)");
+    // Schema files (schema.sql / schema-pg.sql) already include user columns.
+    // This is a best-effort backfill for old MySQL installs only.
+    try {
+        if (defined('DB_DRIVER') && DB_DRIVER === 'pgsql') {
+            return;
+        }
+        $result = $connection->query("SHOW COLUMNS FROM information LIKE 'user_id'");
+        if ($result && $result->fetch() === false) {
+            $connection->exec("ALTER TABLE information
+                ADD COLUMN user_id INT DEFAULT NULL AFTER textdata,
+                ADD COLUMN user_name VARCHAR(255) DEFAULT NULL AFTER user_id,
+                ADD COLUMN user_email VARCHAR(255) DEFAULT NULL AFTER user_name,
+                ADD INDEX idx_user_id (user_id),
+                ADD INDEX idx_user_email (user_email)");
+        }
+    } catch (Throwable $e) {
+        error_log('ensureBookingUserColumn failed: ' . $e->getMessage());
     }
 }

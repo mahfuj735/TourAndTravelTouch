@@ -1,0 +1,22 @@
+# Render blueprint — free tier, no deletion (service sleeps when idle, wakes on request).
+# Steps: Render dashboard → New → Blueprint → select this repo → set env vars → Deploy.
+# Frontend stays on GitHub Pages; set BACKEND_URL (assets/js/config.js PROD_BACKEND)
+# to the Render URL after first deploy.
+services:
+  - type: web
+    name: tourandtraveltouch-backend
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /backend/handlers/health.php
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Neon Postgres connection string (postgresql://...?sslmode=require)
+      - key: FRONTEND_URL
+        value: https://mahfuj735.github.io/TourAndTravelTouch
+      - key: BACKEND_URL
+        sync: false # e.g. https://tourandtraveltouch-backend.onrender.com (set after deploy)
+      - key: ADMIN_USER
+        sync: false # optional, defaults to 'admin'
+      - key: ADMIN_PASS
+        sync: false # optional, defaults to 'admin123' — change after first login
