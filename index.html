@@ -10,7 +10,7 @@
     <meta property="og:title" content="Tour And Travel Touch">
     <meta property="og:description" content="Explore Bangladesh with the best travel deals and packages.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://tourandtraveltouch.com">
+    <meta property="og:url" content="https://tourandtraveltouch-backend.onrender.com">
     <meta name="theme-color" content="#ffa500">
 
     <link rel="stylesheet" href="assets/css/theme-orange.css">
@@ -1131,7 +1131,7 @@
 
         // ---- Backend URL / CSRF Token Injection ----
         // BACKEND_URL comes from assets/js/config.js:
-        // '' on InfinityFree/localhost (same-origin), absolute URL on GitHub Pages.
+        // '' on Render/localhost (same-origin), absolute URL on GitHub Pages.
         const API = (typeof window !== 'undefined' && window.BACKEND_URL) || (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '');
 
         function resolveBackend(path) {
@@ -1168,7 +1168,7 @@
                 });
             })
             .catch(() => {
-                // Backend down (e.g. InfinityFree inactive) — booking/login need it.
+                // Backend down (e.g. Render asleep) — booking/login need it.
                 // Static sections still work; show a hint once.
                 if (API) showFlash('error', 'Backend unreachable. Please use the main live site or try again later.');
             });

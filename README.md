@@ -5,7 +5,7 @@
   <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=1000&color=00D2FF&center=true&vCenter=true&width=500&lines=Tour+And+Travel+Touch;Explore+Bangladesh;Book+Your+Journey" alt="Typing SVG" />
   <br><br>
   
-  [![Live Site](https://img.shields.io/badge/%F0%9F%8C%8D_Live_Demo-tourandtraveltouch.great--site.net-00d2ff?style=for-the-badge)](https://tourandtraveltouch.great-site.net)
+  [![Live Site](https://img.shields.io/badge/%F0%9F%8C%8D_Live_Demo-tourandtraveltouch--backend.onrender.com-00d2ff?style=for-the-badge)](https://tourandtraveltouch-backend.onrender.com)
   [![GitHub Stars](https://img.shields.io/github/stars/mahfuj735/TourAndTravelTouch?style=for-the-badge&logo=github&color=gold)](https://github.com/mahfuj735/TourAndTravelTouch)
   [![Version](https://img.shields.io/badge/%F0%9F%93%8C_Version-2.0-ff6b6b?style=for-the-badge)]()
   
@@ -386,7 +386,7 @@ sequenceDiagram
 |---|---|---|---|
 | HTML5 · CSS3 · JS (ES6+) | PHP 8+ (vanilla) | MySQL / MariaDB | GitHub Actions |
 | Bootstrap 5.0.2 | `mysqli` prepared stmts | Relational schema | FTP deployment |
-| Font Awesome 6.2.1 | Session auth · CSRF | 3 tables | InfinityFree |
+| Font Awesome 6.2.1 | Session auth · CSRF | 3 tables | Render + Neon |
 | Google Fonts (Poppins, Inter) | bcrypt (cost 12) | Indexed queries | Zero-downtime |
 
 </div>
@@ -559,18 +559,18 @@ mysql -u root -p your_database_name < database/schema.sql
 #    Point your web server to the project directory and open index.html
 ```
 
-### ☁️ Production Deployment (InfinityFree)
+### ☁️ Production Deployment (Render + Neon — free, never deleted)
 
 | Step | Action |
 |------|--------|
-| 1 | Create account at [infinityfree.com](https://infinityfree.com) |
-| 2 | Create MySQL DB via control panel |
-| 3 | Import `database/schema.sql` via phpMyAdmin |
-| 4 | Update `backend/config/database.php` with live credentials |
-| 5 | Upload all files to `htdocs/` via FTP |
-| 6 | Verify live URL |
+| 1 | Create free project at [neon.tech](https://neon.tech), copy the pooled connection string |
+| 2 | Import `database/schema-pg.sql` once via Neon SQL Editor |
+| 3 | Create free account at [render.com](https://render.com) → New → Blueprint → select this repo |
+| 4 | Set env vars: `DATABASE_URL` (Neon string), `FRONTEND_URL`, `ADMIN_USER`/`ADMIN_PASS` |
+| 5 | Deploy — Render auto-deploys on every push to `main` (see `render.yaml`) |
+| 6 | Verify `https://tourandtraveltouch-backend.onrender.com/backend/handlers/health.php` returns `{"ok":true,"db":"up"}` |
 
-> **💡 Pro tip:** The CI/CD pipeline automates step 5 on every push to `main` — see the [CI/CD](#cicd-pipeline) section.
+> **💡 Note:** Render free sleeps after 15 min idle and wakes on first request (~30s). GitHub Pages serves the static frontend preview.
 
 ---
 
@@ -578,8 +578,8 @@ mysql -u root -p your_database_name < database/schema.sql
 
 | File | Variable(s) | Purpose |
 |---|---|---|
-| `backend/config/database.php` | `DB_HOST`, `DB_USER`, `DB_PASS`, `DB_NAME` | Database connection |
-| `backend/config/app.php` | `FRONTEND_URL`, `SESSION_NAME` | CORS origin, session cookie name |
+| `backend/config/database.php` | `DATABASE_URL` (Neon Postgres) or `DB_HOST`/`DB_USER`/`DB_PASS`/`DB_NAME` (MySQL) | Database connection |
+| `backend/config/app.php` | `FRONTEND_URL`, `BACKEND_URL` | CORS origin, frontend/backend URLs |
 | `assets/js/config.js` | `BACKEND_URL` | Base URL for all AJAX calls |
 
 > ✅ All URLs and credentials are centralized — zero hardcoded values in handler or view code.
@@ -592,7 +592,7 @@ mysql -u root -p your_database_name < database/schema.sql
 
 | 🔑 Detail | 📋 Value |
 |---|---|
-| **🌐 Live URL** | [tourandtraveltouch.great-site.net/backend/admin/login.php](https://tourandtraveltouch.great-site.net/backend/admin/login.php) |
+| **🌐 Live URL** | [tourandtraveltouch-backend.onrender.com/backend/admin/login.php](https://tourandtraveltouch-backend.onrender.com/backend/admin/login.php) |
 | **📁 Local URL** | `/backend/admin/login.php` |
 | **👤 Default Username** | `admin` |
 | **🔑 Default Password** | `admin123` |
@@ -654,27 +654,23 @@ gitGraph
     commit id: "ci: ftp deploy"
 ```
 
-Every push to `main` triggers an automated deployment:
+Every push to `main` triggers an automated Render deployment (see `render.yaml`).
+GitHub Actions runs validation only:
 
 ```yaml
-# .github/workflows/deploy.yml
-name: Deploy to InfinityFree
+# .github/workflows/ci.yml
+name: CI Validate
 on:
   push:
     branches: [main]
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: FTP Deploy
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./
-          server-dir: /htdocs/
+      - uses: actions/checkout@v4
+      - name: PHP syntax check
+        run: |
+          for f in **/*.php; do php -l "$f"; done
 ```
 
 ---
@@ -700,7 +696,7 @@ Fork → Feature Branch → Commit → Push → Pull Request
 | ✅ Prepared statements on all SQL | Zero tolerance for injection vectors |
 | ✅ CSRF tokens on all POST handlers | Every state change must be authorized |
 | ✅ `htmlspecialchars()` on all output | XSS prevention is non-negotiable |
-| ✅ PHP 8.0+ & MySQL 5.7+ | Matches production environment |
+| ✅ PHP 8.2+ & Postgres (Neon) / MySQL 5.7+ | Matches production environment |
 | ❌ No framework dependencies | Core architectural constraint |
 
 ---
@@ -726,7 +722,7 @@ This project is open for educational and portfolio use. See [LICENSE](LICENSE) f
       </td>
       <td align="center">
         <strong>🌍 Live Demo</strong><br>
-        <a href="https://tourandtraveltouch.great-site.net">tourandtraveltouch.great-site.net</a>
+        <a href="https://tourandtraveltouch-backend.onrender.com">tourandtraveltouch-backend.onrender.com</a>
       </td>
       <td align="center">
         <strong>📦 Repository</strong><br>
@@ -734,7 +730,7 @@ This project is open for educational and portfolio use. See [LICENSE](LICENSE) f
       </td>
       <td align="center">
         <strong>🔐 Admin Panel</strong><br>
-        <a href="https://tourandtraveltouch.great-site.net/backend/admin/login.php">Login</a>
+        <a href="https://tourandtraveltouch-backend.onrender.com/backend/admin/login.php">Login</a>
       </td>
     </tr>
   </table>

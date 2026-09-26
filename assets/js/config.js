@@ -1,14 +1,14 @@
 /*
  | Tour And Travel Touch — Backend Configuration
  | ==============================================
- | Production backend (InfinityFree): https://tourandtraveltouch.great-site.net
+ | Production backend (Render): https://tourandtraveltouch-backend.onrender.com
  |
  | Behaviour:
- |  - When the site is served from the backend host itself (InfinityFree)
+ |  - When the site is served from the backend host itself (Render)
  |    or localhost, BACKEND_URL is '' so all calls stay same-origin
  |    (cookies + session work reliably, no CORS issues).
  |  - When served from GitHub Pages, it falls back to the absolute
- |    InfinityFree URL for API calls.
+ |    Render URL for API calls.
  |
  |  No trailing slash!
  */

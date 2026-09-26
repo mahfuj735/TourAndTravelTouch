@@ -45,7 +45,7 @@ function setCorsHeaders(): void
         header('Vary: Origin');
     }
     // Same-origin requests (no Origin header, e.g. normal form POST
-    // on InfinityFree) need no CORS header at all.
+    // on Render) need no CORS header at all.
 
     header('Access-Control-Allow-Credentials: true');
     header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -78,8 +78,8 @@ function configureSession(): void
     if (session_status() === PHP_SESSION_NONE) {
         $secure = isSecureRequest();
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-        // Cross-site (GitHub Pages -> InfinityFree) needs SameSite=None + Secure.
-        // Same-site (InfinityFree -> InfinityFree) works best with Lax.
+        // Cross-site (GitHub Pages -> Render) needs SameSite=None + Secure.
+        // Same-site (Render -> Render) works best with Lax.
         $isCrossSite = $origin !== '' && strpos($origin, 'github.io') !== false;
         session_set_cookie_params([
             'lifetime' => 0,
