@@ -14,7 +14,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         body {
-            background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url('../assets/images/ui/background img.png') center/cover no-repeat fixed;
+            background: linear-gradient(135deg, rgba(0,0,0,0.6), rgba(0,0,0,0.4)), url('../assets/images/ui/background-img.png') center/cover no-repeat fixed;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -146,10 +146,11 @@
     </div>
 
     <script>
-        const API = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '';
+        const API = (typeof window !== 'undefined' && window.BACKEND_URL) || (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '');
 
         function resolveBackend(path) {
-            return API ? API + '/' + path.replace(/^(\.\.\/)+/, '') : path;
+            var clean = String(path).replace(/^(\.\.\/)+/, '').replace(/^\//, '');
+            return API ? API + '/' + clean : clean;
         }
 
         document.querySelectorAll('form').forEach(form => {

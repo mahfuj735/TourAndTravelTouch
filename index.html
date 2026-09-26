@@ -41,8 +41,8 @@
 
     <!-- Scenic Background Slideshow -->
     <div id="bg-slideshow">
-        <div class="bg-slide" style="background-image: url('assets/images/ui/background img.png')"></div>
-        <div class="bg-slide ocean-scene" style="background-image: url('assets/images/destinations/Saint Martin.jpeg')"></div>
+        <div class="bg-slide" style="background-image: url('assets/images/ui/background-img.png')"></div>
+        <div class="bg-slide ocean-scene" style="background-image: url('assets/images/destinations/saint-martin.jpeg')"></div>
         <div class="bg-slide forest-scene" style="background-image: url('assets/images/destinations/Sundarbans.jpg')"></div>
         <div class="bg-slide" style="background-image: url('assets/images/destinations/Rangamati.jpg')"></div>
         <div class="bg-slide mountain-scene" style="background-image: url('assets/images/destinations/Bandarbans.jpg')"></div>
@@ -168,8 +168,8 @@
     <section class="packages" id="packages">
         <!-- Dedicated background slideshow inside packages stacking context -->
         <div class="packages-bg-slideshow">
-            <div class="pk-bg-slide" style="background-image: url('assets/images/ui/background img.png')"></div>
-            <div class="pk-bg-slide" style="background-image: url('assets/images/destinations/Saint Martin.jpeg')"></div>
+            <div class="pk-bg-slide" style="background-image: url('assets/images/ui/background-img.png')"></div>
+            <div class="pk-bg-slide" style="background-image: url('assets/images/destinations/saint-martin.jpeg')"></div>
             <div class="pk-bg-slide" style="background-image: url('assets/images/destinations/Sundarbans.jpg')"></div>
             <div class="pk-bg-slide" style="background-image: url('assets/images/destinations/Rangamati.jpg')"></div>
             <div class="pk-bg-slide" style="background-image: url('assets/images/destinations/Bandarbans.jpg')"></div>
@@ -363,7 +363,7 @@
                         <div class="card-parallax-shadow"></div>
                         <div class="card-badge card-badge-teal">Beach</div>
                         <div class="card-img">
-                            <img src="assets/images/destinations/Saint Martin.jpeg" alt="Saint Martin Island beach">
+                            <img src="assets/images/destinations/saint-martin.jpeg" alt="Saint Martin Island beach">
                             <div class="card-overlay"></div>
                         </div>
                         <div class="card-body">
@@ -397,7 +397,7 @@
                         <div class="card-parallax-shadow"></div>
                         <div class="card-badge">History</div>
                         <div class="card-img">
-                            <img src="assets/images/destinations/Shait-Gumbad Mosque.jpeg" alt="Sixty Dome Mosque">
+                            <img src="assets/images/destinations/shait-gumbad-mosque.jpeg" alt="Sixty Dome Mosque">
                             <div class="card-overlay"></div>
                         </div>
                         <div class="card-body">
@@ -1130,10 +1130,13 @@
         animateGlow();
 
         // ---- Backend URL / CSRF Token Injection ----
-        const API = typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '';
+        // BACKEND_URL comes from assets/js/config.js:
+        // '' on InfinityFree/localhost (same-origin), absolute URL on GitHub Pages.
+        const API = (typeof window !== 'undefined' && window.BACKEND_URL) || (typeof BACKEND_URL !== 'undefined' ? BACKEND_URL : '');
 
         function resolveBackend(path) {
-            return API ? API + '/' + path.replace(/^(\.\.\/)+/, '') : path;
+            var clean = String(path).replace(/^(\.\.\/)+/, '').replace(/^\//, '');
+            return API ? API + '/' + clean : clean;
         }
 
         document.querySelectorAll('form').forEach(form => {
@@ -1153,6 +1156,7 @@
         fetch(resolveBackend('backend/handlers/csrf-token.php'), { credentials: 'include' })
             .then(r => r.json())
             .then(data => {
+                if (!data || !data.token) return;
                 document.querySelectorAll('form').forEach(form => {
                     if (!form.querySelector('input[name="csrf_token"]')) {
                         const input = document.createElement('input');
@@ -1163,7 +1167,11 @@
                     }
                 });
             })
-            .catch(() => {});
+            .catch(() => {
+                // Backend down (e.g. InfinityFree inactive) — booking/login need it.
+                // Static sections still work; show a hint once.
+                if (API) showFlash('error', 'Backend unreachable. Please use the main live site or try again later.');
+            });
 
         // ---- Flash Message Display ----
         function showFlash(type, message) {

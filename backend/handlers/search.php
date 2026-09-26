@@ -14,10 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_POST['search'])) {
 $searchTerm = trim($_POST['search']);
 $results = [];
 
-$stmt = mysqli_prepare($connection, 'SELECT * FROM information WHERE textdata LIKE ?');
+$stmt = mysqli_prepare(
+    $connection,
+    'SELECT * FROM information WHERE whereto LIKE ? OR howmany LIKE ? OR textdata LIKE ? OR user_name LIKE ? OR user_email LIKE ? ORDER BY created_at DESC LIMIT 100'
+);
 if ($stmt) {
     $likeParam = '%' . $searchTerm . '%';
-    mysqli_stmt_bind_param($stmt, 's', $likeParam);
+    mysqli_stmt_bind_param($stmt, 'sssss', $likeParam, $likeParam, $likeParam, $likeParam, $likeParam);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
 
@@ -86,13 +89,28 @@ if ($stmt) {
                         <tbody>
                             <?php $sn = 1; ?>
                             <?php foreach ($results as $data): ?>
+                                <?php
+                                    $who = trim((string)($data['user_name'] ?? ''));
+                                    $mail = trim((string)($data['user_email'] ?? ''));
+                                    $notes = trim((string)($data['textdata'] ?? ''));
+                                    $whoLine = $who;
+                                    if ($mail !== '') {
+                                        $whoLine .= ($whoLine !== '' ? ' (' . $mail . ')' : $mail);
+                                    }
+                                    if ($notes !== '') {
+                                        $whoLine .= ($whoLine !== '' ? ' — ' . $notes : $notes);
+                                    }
+                                    if ($whoLine === '') {
+                                        $whoLine = '-';
+                                    }
+                                ?>
                                 <tr>
                                     <td><?= $sn++ ?></td>
                                     <td><?= htmlspecialchars($data['whereto'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                     <td><?= htmlspecialchars($data['howmany'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                     <td><?= htmlspecialchars($data['arrival'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
                                     <td><?= htmlspecialchars($data['leaving'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
-                                    <td><?= htmlspecialchars($data['textdata'] ?? '', ENT_QUOTES, 'UTF-8') ?></td>
+                                    <td><?= htmlspecialchars($whoLine, ENT_QUOTES, 'UTF-8') ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

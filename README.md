@@ -6,7 +6,7 @@
   <br><br>
   
   [![Live Site](https://img.shields.io/badge/%F0%9F%8C%8D_Live_Demo-tourandtraveltouch.great--site.net-00d2ff?style=for-the-badge)](https://tourandtraveltouch.great-site.net)
-  [![GitHub Stars](https://img.shields.io/github/stars/mahfujul-01726/TourAndTravelTouch?style=for-the-badge&logo=github&color=gold)](https://github.com/mahfujul-01726/TourAndTravelTouch)
+  [![GitHub Stars](https://img.shields.io/github/stars/mahfuj735/TourAndTravelTouch?style=for-the-badge&logo=github&color=gold)](https://github.com/mahfuj735/TourAndTravelTouch)
   [![Version](https://img.shields.io/badge/%F0%9F%93%8C_Version-2.0-ff6b6b?style=for-the-badge)]()
   
   <br>
@@ -116,7 +116,7 @@ This isn't another Laravel clone or a WordPress travel theme. **Tour And Travel 
     <tr>
       <td width="50%" align="center">
         <strong>🏠 Landing Page</strong><br>
-        <img src="assets/images/ui/background img.png" alt="Landing page hero section" width="100%" style="border-radius: 8px;">
+        <img src="assets/images/ui/background-img.png" alt="Landing page hero section" width="100%" style="border-radius: 8px;">
         <br><sub>Parallax hero with glassmorphism nav and 3D destination cards</sub>
       </td>
       <td width="50%" align="center">
@@ -191,8 +191,8 @@ This isn't another Laravel clone or a WordPress travel theme. **Tour And Travel 
     </tr>
     <tr>
       <td align="center"><strong>Bandarbans ⛰️</strong><br><img src="assets/images/destinations/Bandarbans.jpg" width="180" height="120" style="object-fit: cover; border-radius: 6px;"></td>
-      <td align="center"><strong>Saint Martin 🏖️</strong><br><img src="assets/images/destinations/Saint Martin.jpeg" width="180" height="120" style="object-fit: cover; border-radius: 6px;"></td>
-      <td align="center"><strong>Shait-Gumbad 🕌</strong><br><img src="assets/images/destinations/Shait-Gumbad Mosque.jpeg" width="180" height="120" style="object-fit: cover; border-radius: 6px;"></td>
+      <td align="center"><strong>Saint Martin 🏖️</strong><br><img src="assets/images/destinations/saint-martin.jpeg" width="180" height="120" style="object-fit: cover; border-radius: 6px;"></td>
+      <td align="center"><strong>Shait-Gumbad 🕌</strong><br><img src="assets/images/destinations/shait-gumbad-mosque.jpeg" width="180" height="120" style="object-fit: cover; border-radius: 6px;"></td>
     </tr>
   </table>
 </div>
@@ -542,7 +542,7 @@ stateDiagram-v2
 
 ```bash
 # 📥 1. Clone the repository
-git clone https://github.com/mahfujul-01726/TourAndTravelTouch.git
+git clone https://github.com/mahfuj735/TourAndTravelTouch.git
 cd TourAndTravelTouch
 
 # 🗄️ 2. Import the database
@@ -722,7 +722,7 @@ This project is open for educational and portfolio use. See [LICENSE](LICENSE) f
     <tr>
       <td align="center">
         <strong>✍️ Author</strong><br>
-        <a href="https://github.com/mahfujul-01726">Mahfujul Karim</a>
+        <a href="https://github.com/mahfuj735">Mahfujul Karim</a>
       </td>
       <td align="center">
         <strong>🌍 Live Demo</strong><br>
@@ -730,7 +730,7 @@ This project is open for educational and portfolio use. See [LICENSE](LICENSE) f
       </td>
       <td align="center">
         <strong>📦 Repository</strong><br>
-        <a href="https://github.com/mahfujul-01726/TourAndTravelTouch">GitHub</a>
+        <a href="https://github.com/mahfuj735/TourAndTravelTouch">GitHub</a>
       </td>
       <td align="center">
         <strong>🔐 Admin Panel</strong><br>

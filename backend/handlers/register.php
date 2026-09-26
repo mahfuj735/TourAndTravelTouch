@@ -11,6 +11,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect('/pages/signup.html');
 }
 
+if (!validateCsrfToken($_POST['csrf_token'] ?? '')) {
+    redirectWithFlash('/pages/signup.html', 'error', 'Invalid form submission. Please try again.');
+}
+
 $fullname = trim($_POST['fullname'] ?? '');
 $email = trim($_POST['email'] ?? '');
 $password = $_POST['password'] ?? '';

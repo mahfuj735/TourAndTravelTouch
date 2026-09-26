@@ -1,50 +1,101 @@
-name: 🚀 Professional Auto-Deployment (InfinityFree)
+name: Professional Auto-Deployment (InfinityFree)
 
-# This workflow runs automatically every time you push code to the 'main' branch.
-# It uses an intelligent FTP syncing action to only upload modified/new files.
+# Push to main auto-deploys to InfinityFree via FTP.
+# Required GitHub Secrets (Settings -> Secrets and variables -> Actions):
+#   FTP_USERNAME, FTP_PASSWORD, optional FTP_SERVER (default ftpupload.net)
+# After deploy, verify: https://tourandtraveltouch.great-site.net/backend/handlers/health.php
 on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+  workflow_dispatch:
+
+concurrency:
+  group: infinityfree-deploy
+  cancel-in-progress: false
 
 jobs:
-  web-deploy:
-    name: 🌐 Sync Files to Web Host
+  validate:
+    name: Validate PHP + links
     runs-on: ubuntu-latest
-    
     steps:
-      - name: 📥 Get latest codebase
+      - name: Get latest codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: PHP syntax check
+        run: |
+          shopt -s globstar
+          fail=0
+          for f in **/*.php; do
+            php -l "$f" || fail=1
+          done
+          exit $fail
+
+      - name: Check for stale asset paths with spaces
+        run: |
+          if grep -R --include='*.html' --include='*.css' --include='*.js' --include='*.php' -n "background img.png\|Saint Martin.jpeg\|Shait-Gumbad Mosque.jpeg" .; then
+            echo "Found references to old filenames with spaces. Rename to hyphenated names."
+            exit 1
+          fi
+
+  web-deploy:
+    name: Sync Files to Web Host
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Get latest codebase
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetches all history so the FTP deploy action can detect changed files
+          fetch-depth: 0
 
-      - name: 📂 Sync files via FTP
+      - name: Validate FTP secrets present
+        run: |
+          if [ -z "${{ secrets.FTP_USERNAME }}" ] || [ -z "${{ secrets.FTP_PASSWORD }}" ]; then
+            echo "::error::FTP_USERNAME / FTP_PASSWORD secrets are missing. Set them in Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+      - name: Sync files via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          # Your InfinityFree FTP host (usually ftpupload.net)
-          server: ftpupload.net
-          
-          # These credentials must be configured in your GitHub Repository Settings:
-          # Go to Settings -> Secrets and variables -> Actions -> Secrets
+          server: ${{ secrets.FTP_SERVER || 'ftpupload.net' }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          
-          # The local directory to upload (current directory)
+          protocol: ftp
+          port: 21
           local-dir: ./
-          
-          # The remote folder where InfinityFree hosts files (must be /htdocs/)
           server-dir: /htdocs/
-          
-          # List of files/folders to completely exclude from upload to keep your server clean
+          dangerous-clean-slate: false
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
             **/.vscode/**
+            **/.opencode/**
             **/node_modules/**
             **/README.md
             **/opencode.json
+            **/.env
+            **/.env.*
             **/*.psd
             **/Thumbs.db
             **/.DS_Store
+
+      - name: Health check (backend reachable?)
+        run: |
+          echo "Waiting 25s for FTP sync to settle..."
+          sleep 25
+          for i in 1 2 3; do
+            code=$(curl -s -o /tmp/health.json -w "%{http_code}" https://tourandtraveltouch.great-site.net/backend/handlers/health.php || true)
+            echo "Attempt $i: HTTP $code"
+            cat /tmp/health.json || true
+            echo
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 10
+          done
+          echo "::warning::Health endpoint did not return 200. Check InfinityFree files in /htdocs/, DB credentials, and that the domain is active."
