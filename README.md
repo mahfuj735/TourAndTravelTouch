@@ -33,6 +33,7 @@
 - [🌍 Live Deployment](#-live-deployment)
 - [💡 Why This Project](#-why-this-project)
 - [📸 Screenshots](#-screenshots)
+- [🧭 Visual User Journey](#-visual-user-journey)
 - [✨ Features](#-features)
 - [🛠️ Tech Stack](#️-tech-stack)
 - [🏗️ Architecture](#️-architecture)
@@ -113,6 +114,31 @@
 | <img src="assets/images/ui/about-img.png" alt="About section" width="100%" /> |
 
 </details>
+
+---
+
+## 🧭 Visual User Journey
+
+*Live captures from the production site — kon page er pore kon page, step by step.*
+
+```mermaid
+flowchart LR
+    H["🏠 Homepage<br/>browse destinations"] --> S["📝 Sign Up<br/>create account"]
+    S --> L["🔑 Log In<br/>start session"]
+    L --> B["📅 Book<br/>pick dates & travelers"]
+    B --> T["🎉 Toast<br/>booking confirmed"]
+    H -.-> A["🔐 Admin Login<br/>admin realm"]
+    A --> D["📊 Dashboard<br/>bookings + users"]
+```
+
+| Step | Page | Korte hobe | Screenshot |
+|---|---|---|---|
+| 1 | 🏠 [Homepage](https://tourandtraveltouch-backend.onrender.com) | Destinations, packages, gallery dekho | <img src="assets/images/ui/flow-01-home.jpeg" alt="Homepage full page" width="100%" /> |
+| 2 | 📝 [Sign Up](https://tourandtraveltouch-backend.onrender.com/pages/signup.html) | Full name + email + password (≥ 8 chars) → Create Account | <img src="assets/images/ui/flow-03-signup.jpeg" alt="Sign up page" width="100%" /> |
+| 3 | 🔑 [Log In](https://tourandtraveltouch-backend.onrender.com/pages/login.html) | Email + password → Log In (CSRF auto-attached) | <img src="assets/images/ui/flow-04-login.jpeg" alt="Login page" width="100%" /> |
+| 4 | 📅 Homepage `#book` | Destination, travelers, dates, notes → Book Now (login chara form lock thake) | <img src="assets/images/ui/flow-02-book.jpeg" alt="Booking section auth wall" width="100%" /> |
+| 5 | 🔐 [Admin Login](https://tourandtraveltouch-backend.onrender.com/backend/admin/login.php) | Admin username + password (`admin` / `admin123` first time) | <img src="assets/images/ui/flow-05-admin-login.jpeg" alt="Admin login page" width="100%" /> |
+| 6 | 📊 Dashboard | Total bookings + users stats, full tables, Logout | <img src="assets/images/ui/flow-06-admin-dashboard.jpeg" alt="Admin dashboard" width="100%" /> |
 
 ---
 
