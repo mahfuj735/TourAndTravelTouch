@@ -121,6 +121,16 @@
 
 *Live captures from the production site — kon page er pore kon page, step by step.*
 
+<div align="center">
+
+### ▶️ Animated Walkthrough
+
+<img src="assets/images/ui/user-journey.gif" alt="Animated user journey: home → signup → login → booking → admin → dashboard" width="100%" />
+
+*Home → Sign Up → Log In → Book → Admin Login → Dashboard (loops automatically)*
+
+</div>
+
 ```mermaid
 flowchart LR
     H["🏠 Homepage<br/>browse destinations"] --> S["📝 Sign Up<br/>create account"]
